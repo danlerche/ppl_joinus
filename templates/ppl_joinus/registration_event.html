@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags %}
+
+{% block content %}
+
+<h1>{{page.title}}</h1>
+{{ page.body|richtext }}
+
+<p>{{ page.date }}</p>
+
+{% if page.form_chooser == None  %}
+<b>No registration form associated</b>
+
+{% endif %}
+
+{% if current_spots == 0 and current_waitlist_spots == 0 %}
+<p>Registration for this program is now full</p>
+
+{% endif %}
+
+{% if current_spots > 0 and page.form_chooser != None %}
+<b>Registration Open</b>
+<p>{{ current_spots }} Spots remaining</p>
+<p>{{ current_waitlist_spots }} spots on the waitlist</p>
+
+<form method="POST">
+  {% csrf_token %}
+  {{ custom_form.as_p }}
+ <button type="submit" class="btn btn-default">Register</button>
+
+</form>
+{% endif %}
+
+{% if current_spots == 0 and current_waitlist_spots > 0 and page.form_chooser != None %}
+<b>You will be registered for the waitlist</b>
+<p>{{ current_waitlist_spots }}remaining</p>
+
+
+<form method="POST">
+  {% csrf_token %}
+  {{ custom_form.as_p }}
+ <button type="submit" class="btn btn-default">Register</button>
+
+</form>
+
+{% endif %}
+
+
+{% endblock %}
