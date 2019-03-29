@@ -2,8 +2,13 @@
 {% load wagtailcore_tags %}
 
 {% block content %}
-<h1>Thank You</h1>
 
-<p>Thank you for registering</p>
+
+<div id="page-content" class="container">
+<div id="title-box" class="row">
+<div class="brdcrumb col">
+<h1>You are registered for {{ page.title }}</h1>
+</div>
+</div>
 
 {% endblock %}

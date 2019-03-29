@@ -9,7 +9,7 @@ from wagtail.core.fields import RichTextField
 from wagtail.contrib.forms.models import AbstractFormField, AbstractForm, AbstractEmailForm, AbstractFormSubmission
 from wagtail.contrib.forms.edit_handlers import FormSubmissionsPanel
 from wagtail.core.models import Page
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.core.serializers.json import DjangoJSONEncoder
 
 class JoinusEvent(Page):
@@ -32,6 +32,7 @@ class JoinusEvent(Page):
             current_waitlisted = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=1).count()
             current_spots = self.spots_available - current_registered
             current_waitlist_spots = self.waitlist_spots_available - current_waitlisted
+
             #Gets the registration page that relates to the form chooser selected by the user in the event page
             #Gets the custom form that relates to the selected Registration form page
             #custom_form = registration_form_page.get_form(request.POST, request.FILES, page=self, user=request.user)
@@ -46,8 +47,9 @@ class JoinusEvent(Page):
                     registration = JoinusRegistration(event_name=event_instance, user_info_id=get_primary[0], wait_list=0)
                     registration.save()
                     #There is a bug here. When the admin changes the spots available or the waitlist amount after people start registering
-
-                    return render(request, 'ppl_joinus/thank_you.html', {
+                    # 2nd bug! Hitting refresh on landing pages causes a second registration. Let's try using the form builders usual landing page features to fix this
+                    # or see if a user already submitted data http://docs.wagtail.io/en/v2.4/reference/contrib/forms/customisation.html
+                    return redirect('/thank-you', {
                         'page': self,
                         #'user': user,
                     })
@@ -74,7 +76,7 @@ class JoinusEvent(Page):
             else:
                 user_form = ''
 
-            return render(request, 'ppl_joinus/registration_event.html', {
+            return render(request, 'ppl_joinus/joinus_event.html', {
                 'page': self,
                 'current_registered': current_registered,
                 'current_waitlisted': current_waitlisted,

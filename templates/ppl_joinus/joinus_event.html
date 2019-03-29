@@ -1,29 +1,38 @@
 {% extends "base.html" %}
-{% load wagtailcore_tags %}
+{% load static wagtailcore_tags wagtailuserbar menu_tags wagtailimages_tags %}
 
 {% block content %}
+<div id="page-content" class="container">
+<div id="title-box" class="row">
+<div class="brdcrumb col">
+<h1>{{ page.title }}</h1>
+</div>
+</div>
 
-<h1>{{page.title}}</h1>
+
+<div id="page-body" class="row">
+<div class="col">
+
 {{ page.body|richtext }}
 
-<p>{{ page.date }}</p>
-
 {% if page.form_chooser == None  %}
-<b>No registration form associated</b>
+<p class="alert alert-danger">No registration form associated</p>
 
 {% endif %}
 
 {% if current_spots == 0 and current_waitlist_spots == 0 %}
-<p>Registration for this program is now full</p>
+<p class="alert alert-danger">Registration is now full</p>
 
 {% endif %}
 
 {% if current_spots > 0 and page.form_chooser != None %}
-<b>Registration Open</b>
+
+<p class="alert alert-success">Registration Open</p>
+<p>{{ page.date }}</p>
 <p>{{ current_spots }} Spots remaining</p>
 <p>{{ current_waitlist_spots }} spots on the waitlist</p>
 
-<form method="POST">
+<form class="mb-4" method="POST">
   {% csrf_token %}
   {{ custom_form.as_p }}
  <button type="submit" class="btn btn-default">Register</button>
@@ -36,7 +45,7 @@
 <p>{{ current_waitlist_spots }}remaining</p>
 
 
-<form method="POST">
+<form class="mb-4" method="POST">
   {% csrf_token %}
   {{ custom_form.as_p }}
  <button type="submit" class="btn btn-default">Register</button>
@@ -44,6 +53,9 @@
 </form>
 
 {% endif %}
+</div>
+</div>
+</div>
 
 
 {% endblock %}
