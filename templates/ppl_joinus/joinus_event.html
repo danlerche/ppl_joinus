@@ -15,7 +15,7 @@
 
 {{ page.body|richtext }}
 
-{% if page.form_chooser == None  %}
+{% if page.registration_form_chooser == None  %}
 <p class="alert alert-danger">No registration form associated</p>
 
 {% endif %}
@@ -25,27 +25,14 @@
 
 {% endif %}
 
-{% if current_spots > 0 and page.form_chooser != None %}
+{% if current_spots > 0 and page.registration_form_chooser != None %}
 
 <p class="alert alert-success">Registration Open</p>
 <p>{{ page.date }}</p>
 <p>{{ current_spots }} Spots remaining</p>
 <p>{{ current_waitlist_spots }} spots on the waitlist</p>
 
-<form class="mb-4" method="POST">
-  {% csrf_token %}
-  {{ custom_form.as_p }}
- <button type="submit" class="btn btn-default">Register</button>
-
-</form>
-{% endif %}
-
-{% if current_spots == 0 and current_waitlist_spots > 0 and page.form_chooser != None %}
-<b>You will be registered for the waitlist</b>
-<p>{{ current_waitlist_spots }}remaining</p>
-
-
-<form class="mb-4" method="POST">
+<form class="reg-form mb-4" method="POST">
   {% csrf_token %}
   {{ custom_form.as_p }}
  <button type="submit" class="btn btn-default">Register</button>
@@ -53,6 +40,21 @@
 </form>
 
 {% endif %}
+
+{% if current_spots == 0 and current_waitlist_spots > 0 and page.registration_form_chooser != None and messages is not True %}
+<p class="alert bg-warning">You will be registered for the waitlist</p>
+<p>{{ current_waitlist_spots }} waitlist spot remaining</p>
+
+
+<form class="mb-4" method="POST">
+  {% csrf_token %}
+  {{ custom_form.as_p }}
+ <button type="submit" class="btn btn-default">Register</button>
+
+</form>
+
+{% endif %}
+
 </div>
 </div>
 </div>

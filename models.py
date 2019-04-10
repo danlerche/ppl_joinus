@@ -11,22 +11,32 @@ from wagtail.contrib.forms.edit_handlers import FormSubmissionsPanel
 from wagtail.core.models import Page
 from django.shortcuts import render, redirect
 from django.core.serializers.json import DjangoJSONEncoder
+from django.http import HttpResponse, HttpResponseRedirect
+from django.contrib import messages
+
+class SuccessPage(Page):
+    body = RichTextField(blank=True)
+    content_panels = Page.content_panels + [
+        FieldPanel('body', classname="full"),
+    ]
 
 class JoinusEvent(Page):
     body = RichTextField(blank=True)
     date = models.DateTimeField()
     spots_available = models.PositiveIntegerField(default=0)
     waitlist_spots_available = models.PositiveIntegerField(default=0)
-    form_chooser = models.ForeignKey('JoinusFormPage', default=1, blank=True, on_delete=models.SET_NULL, null=True)
+    registration_form_chooser = models.ForeignKey('JoinusFormPage', default=1, blank=True, on_delete=models.SET_NULL, null=True)
+    success_page = models.ForeignKey('SuccessPage', default=1, blank=True, on_delete=models.SET_NULL, null=True)
     content_panels = AbstractForm.content_panels + [
         FieldPanel('body', classname="full"),
         FieldPanel('date', classname="full"),
         FieldPanel('spots_available', classname="full"),
         FieldPanel('waitlist_spots_available', classname="full"),
-        PageChooserPanel('form_chooser'),
+        PageChooserPanel('registration_form_chooser'),
+        PageChooserPanel('success_page'),
     ]
 
-    def serve(self, request, *args, **kwargs):
+    def serve(self, request, form_submission=None, *args, **kwargs):
             event_instance = JoinusEvent.objects.get(id=self.page_ptr_id)
             current_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0).count()
             current_waitlisted = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=1).count()
@@ -37,8 +47,8 @@ class JoinusEvent(Page):
             #Gets the custom form that relates to the selected Registration form page
             #custom_form = registration_form_page.get_form(request.POST, request.FILES, page=self, user=request.user)
 
-            if request.method == 'POST' and self.form_chooser is not None:
-                registration_form_page = JoinusFormPage.objects.get(pk=self.form_chooser)
+            if request.method == 'POST' and self.registration_form_chooser is not None:
+                registration_form_page = JoinusFormPage.objects.get(pk=self.registration_form_chooser)
                 custom_form = registration_form_page.get_form(request.POST, request.FILES, page=self, user=request.user)
 
                 if custom_form.is_valid() and current_spots > 0:
@@ -47,31 +57,26 @@ class JoinusEvent(Page):
                     registration = JoinusRegistration(event_name=event_instance, user_info_id=get_primary[0], wait_list=0)
                     registration.save()
                     #There is a bug here. When the admin changes the spots available or the waitlist amount after people start registering
-                    # 2nd bug! Hitting refresh on landing pages causes a second registration. Let's try using the form builders usual landing page features to fix this
-                    # or see if a user already submitted data http://docs.wagtail.io/en/v2.4/reference/contrib/forms/customisation.html
-                    return redirect('/thank-you', {
-                        'page': self,
-                        #'user': user,
-                    })
+                    messages.success(request, 'You have signed up for ' + self.title)
+                    url = self.success_page.url
+                    return redirect(url, permanent=False)
 
                 elif custom_form.is_valid() and current_spots == 0 and current_waitlist_spots > 0:
                     form_submission = registration_form_page.process_form_submission(custom_form)
                     user_instance = get_primary
                     registration = JoinusRegistration(event_name=event_instance, user_info_id=get_primary[0], wait_list=1)
                     registration.save()
-
-                    return render (request, 'ppl_joinus/waitlist.html', {
-                    'page':self,
-                    'user':self,
-                    })
+                    messages.success(request, 'You have signed up for the ' + self.title + ' waitlist')
+                    url = self.success_page.url
+                    return redirect(url, permanent=False)
 
                 else:
                     return render(request, 'ppl_joinus/full.html', {
                         'page': self,
                     })
 
-            elif self.form_chooser is not None:
-                registration_form_page = JoinusFormPage.objects.get(pk=self.form_chooser)
+            elif self.registration_form_chooser is not None:
+                registration_form_page = JoinusFormPage.objects.get(pk=self.registration_form_chooser)
                 user_form = registration_form_page.get_form(page=self, user=request.user)
             else:
                 user_form = ''

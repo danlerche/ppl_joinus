@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% load static wagtailcore_tags  wagtailimages_tags  menu_tags %}
+
+{% block content %}
+
+
+{{ page.body | richtext }}
+
+
+
+{% for message in messages %}
+    <p class="reg-message alert alert-success">{{ message }} </p>
+{% endfor %}
+
+{% endblock %}
