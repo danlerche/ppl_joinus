@@ -25,8 +25,8 @@ class JoinusEvent(Page):
     date = models.DateTimeField()
     spots_available = models.PositiveIntegerField(default=0)
     waitlist_spots_available = models.PositiveIntegerField(default=0)
-    registration_form_chooser = models.ForeignKey('JoinusFormPage', default=1, blank=True, on_delete=models.SET_NULL, null=True)
-    success_page = models.ForeignKey('SuccessPage', default=1, blank=True, on_delete=models.SET_NULL, null=True)
+    registration_form_chooser = models.ForeignKey('JoinusFormPage', default=1, blank=False, on_delete=models.SET_NULL, null=True)
+    success_page = models.ForeignKey('SuccessPage', default=1, blank=False, on_delete=models.SET_NULL, null=True)
     content_panels = AbstractForm.content_panels + [
         FieldPanel('body', classname="full"),
         FieldPanel('date', classname="full"),
@@ -130,4 +130,4 @@ class JoinusRegistration(models.Model):
         return self.event_name.title
 
     class Meta:
-        verbose_name = "Event Registrations"
+        verbose_name = "Event Registration"

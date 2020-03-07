@@ -4,19 +4,11 @@
 
 {% block content %}
 <div id="page-content" class="container">
-<div id="title-box" class="row">
-<div class="brdcrumb col">
-    {% if self.get_ancestors|length > 1 %}
-    {% for page in self.get_ancestors %}
-    {% if page.is_root == False %}
-<a href={% pageurl page %}>{{ page.title }}</a> >
-    {% endif %}
-    {% endfor %}
-
-<h1>{{ self.title }}</h1>
-{% endif %}
-  </div>
-</div>
+{% for post in page.get_children %}
+    {% with post=post.specific %}
+        <h2><a href="{% pageurl post %}">{{ post.title }}</a></h2>
+    {% endwith %}
+{% endfor %}
 <p class="alert alert-danger">This display form will not submit. Please associate it with a joinus event.</p>
 
 <div id="page-body" class="row">
