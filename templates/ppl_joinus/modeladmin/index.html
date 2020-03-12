@@ -1,5 +1,5 @@
 {% extends "wagtailadmin/base.html" %}
-{% load i18n modeladmin_tags %}
+{% load i18n modeladmin_tags override_model_admin_includes %}
 
 {% block titletag %}{{ view.get_meta_title }}{% endblock %}
 
@@ -16,6 +16,7 @@
 {% block content %}
     {% block header %}
 
+
         <header class="nice-padding hasform" role="banner">
             <div class="row header-title">
                 <div class="left">
@@ -26,6 +27,11 @@
                 </div>
                 {% block header_extra %}
                     {% if user_can_create %}
+                         <div class="right">
+                            <div class="addbutton">
+                                {% include 'modeladmin/includes/button.html' with button=view.button_helper.export_button %}
+                             </div>
+                         </div>
                         <div class="right">
                             <div class="addbutton">
                                 {% include 'modeladmin/includes/button.html' with button=view.button_helper.add_button %}
@@ -35,9 +41,11 @@
                 {% endblock %}
             </div>
         </header>
+
     {% endblock %}
 
     {% block content_main %}
+
         <div>
             <div>{{ view.get_events_and_users }} </div>
             <div class="row">
@@ -45,11 +53,36 @@
 
                     {% block filters %}
                         {% if view.has_filters and all_count %}
+
                         <div class="changelist-filter col3">
                             <h2>{% trans 'Filter' %}</h2>
-                            {% for spec in view.filter_specs %}{% admin_list_filter view spec %}{% endfor %}
+                            {% for spec in view.filter_specs %}{% admin_list_filter_override view spec %}{% endfor %}
                         </div>
                         {% endif %}
+
+                        <script> 
+                        var event_filter = document.getElementById("model-admin-filter-event-name");
+                        var select_choices = event_filter.getElementsByClassName("choice");
+                        var aTags = event_filter.getElementsByTagName("a");
+                        var searchText = "All";
+                        var found;
+
+                        for (var i = 0; i < select_choices.length; i++) {
+                            if (select_choices[i].textContent == searchText) {
+                            found = select_choices[i];
+                            console.log(found);
+                            var node = document.createElement("BUTTON");
+                            var textnode = document.createTextNode("Button");
+                            node.appendChild(textnode);
+                            document.getElementById("test").appendChild(node);
+                            break;
+                             }
+                            }
+                    
+                        </script>
+
+
+
                     {% endblock %}
 
                     <div class="result-list {% if view.has_filters and all_count %}col9{% else %}col12{% endif %}">

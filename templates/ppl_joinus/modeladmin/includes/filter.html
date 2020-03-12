@@ -1,0 +1,18 @@
+{% load i18n %}
+{% blocktrans with filter_title=title %} By {{ filter_title }} {% endblocktrans %}
+
+<ul id="model-admin-filter-{{ title|slugify }}">
+
+{% for choice in choices %}
+    <li{% if choice.selected %} class="selected"{% endif %}>
+    <a class="choice" href="{{ choice.query_string|iriencode }}">{{ choice.display }}</a></li>
+{% endfor %}
+</ul>
+
+<ul id="test">
+
+</ul>
+
+
+
+

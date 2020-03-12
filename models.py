@@ -13,6 +13,13 @@ from django.shortcuts import render, redirect
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib import messages
+from django.core.exceptions import ValidationError
+
+RESERVED_LABELS = ['Your Name', 'Email', 'Your Phone Number']
+
+def validate_label(value):
+    if value in RESERVED_LABELS:
+        raise ValidationError("'%s' is reserved." % value)
 
 class SuccessPage(Page):
     body = RichTextField(blank=True)
@@ -95,7 +102,13 @@ class JoinusEvent(Page):
 
 class JoinusFormField(AbstractFormField):
     form_builder_page = ParentalKey('JoinusFormPage', on_delete=models.CASCADE, related_name='form_fields')
-
+    label = models.CharField(
+        verbose_name='label',
+        max_length=255,
+        help_text='The label of the form field, cannot be one of the following: %s.'
+        % ', '.join(RESERVED_LABELS),
+        validators=[validate_label]
+    )
 
 class JoinusFormPage(AbstractEmailForm):
 
@@ -112,6 +125,31 @@ class JoinusFormPage(AbstractEmailForm):
         get_submission = self.get_submission_class().objects.filter(pk=create_submission.id).values('id')
         global get_primary
         get_primary = [id['id'] for id in get_submission]
+
+
+    def get_form_fields(self):
+
+            fields = list(super(JoinusFormPage, self).get_form_fields())
+
+            fields.insert(0, JoinusFormField(
+                label='Phone number',
+                field_type='singleline',
+                required=False,
+                help_text="Valid phone Numer"))
+
+            fields.insert(0, JoinusFormField(
+                label='Email',
+                field_type='email',
+                required=True,
+                help_text="Your email address"))
+
+            fields.insert(0, JoinusFormField(
+                label='Your Name',
+                field_type='singleline',
+                required=False,
+                help_text="Your First and Last Name"))
+
+            return fields
 
     class Meta:
         verbose_name = "Joinus Form Builder"

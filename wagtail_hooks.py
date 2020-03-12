@@ -2,11 +2,23 @@ from wagtail.contrib.modeladmin.options import (
     ModelAdmin, modeladmin_register)
 from wagtail.contrib.modeladmin.views import IndexView
 from .models import JoinusEvent, JoinusUserFormBuilder, JoinusRegistration
-import json, itertools, csv
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.utils.html import format_html
 from django.http import HttpResponse
 from wagtail.core import hooks
+import json, itertools, csv
+import csv
+from django.http import HttpResponse
+from django.utils.encoding import smart_str
+from django.contrib.auth.decorators import login_required
+from django.conf.urls import url
+from django.urls import reverse
+from django.utils.translation import ugettext as _
+from django.utils.decorators import method_decorator
+from django.core.exceptions import PermissionDenied
+from wagtail.contrib.modeladmin.views import IndexView
+from wagtail.contrib.modeladmin.helpers import AdminURLHelper, ButtonHelper
+
 
 class EventAdmin(ModelAdmin):
     model = JoinusEvent
@@ -20,16 +32,136 @@ class UserAdmin(ModelAdmin):
     add_to_settings_menu = True
     exclude_from_explorer = False
 
+class ExportButtonHelper(ButtonHelper):
 
-# Check this out for creating a download CSV option: https://parbhatpuri.com/add-download-csv-option-in-wagtail-modeladmin.html
+    export_button_classnames = ['icon', 'icon-download']
 
-class showEvents(IndexView):
+    def export_button(self, classnames_add=None, classnames_exclude=None):
+        if classnames_add is None:
+            classnames_add = []
+        if classnames_exclude is None:
+            classnames_exclude = []
 
-    def get_events_and_users(events):
-      pass
+        classnames = self.export_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        text = _('Export {}'.format(self.verbose_name_plural.title()))
+
+        return {
+            'url': self.url_helper.get_action_url('export', query_params=self.request.GET),
+            'label': text,
+            'classname': cn,
+            'title': text,
+        }
+
+class ExportAdminURLHelper(AdminURLHelper):
+    non_object_specific_actions = ('create', 'choose_parent', 'index', 'export')
+
+    def get_action_url(self, action, *args, **kwargs):
+        query_params = kwargs.pop('query_params', None)
+
+        url_name = self.get_action_url_name(action)
+        if action in self.non_object_specific_actions:
+            url = reverse(url_name)
+        else:
+            url = reverse(url_name, args=args, kwargs=kwargs)
+
+        if query_params:
+            url += '?{params}'.format(params=query_params.urlencode())
+
+        return url
+
+    def get_action_url_pattern(self, action):
+        if action in self.non_object_specific_actions:
+            return self._get_action_url_pattern(action)
+
+        return self._get_object_specific_action_url_pattern(action)
 
 
-class RegistrationAdmin(ModelAdmin):
+class ExportView(IndexView):
+
+    def export_csv(self):
+        data = self.queryset.all()
+
+        data_headings = [field.verbose_name for field
+                         in JoinusRegistration._meta.get_fields()]
+
+        del data_headings[1] #removes the user_info heading as it is replaced by parsed json keys
+
+        # return a CSV instead
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = 'attachment;filename=' + \
+            'registrations.csv'
+
+        # Prevents UnicodeEncodeError for labels with non-ansi symbols
+        data_headings = [smart_str(label) for label in data_headings]
+
+        writer = csv.writer(response)
+
+        user_csv_headings_list = []
+
+        for heading_info in data:
+            user_json = str(heading_info.user_info)
+            json_loads = json.loads(user_json)
+            user_csv_headings_list = list(json_loads.keys())
+
+        first_three_headings =  user_csv_headings_list[0:3]
+        writer.writerow(data_headings + first_three_headings)
+
+        for reg in data:
+            if reg.wait_list == True:
+                reg.wait_list = 'Yes'
+            else:
+                reg.wait_list = 'No'
+            user_csv_values_list = []
+            user_json = str(reg.user_info)
+            json_loads = json.loads(user_json)
+            user_csv_values_list = list(json_loads.values())
+            first_three_values = (user_csv_values_list[0:3])
+            data_row = []
+            data_row.extend([
+                reg.id, reg.event_name, reg.registration_date, reg.wait_list
+            ])
+
+            writer.writerow(data_row + first_three_values)
+
+        return response
+
+        ### todo we need, need, need to export all csv values and headings when the list is filtered, 
+        # or just say screw it. Hide the csv button when not filtered by event and display all values when not 
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        super().dispatch(request, *args, **kwargs)
+        return self.export_csv()
+
+class ExportModelAdminMixin(object):
+    """
+    A mixin to add to your model admin which hooks the different helpers, the view and register the new urls.
+    """
+
+    button_helper_class = ExportButtonHelper
+    url_helper_class = ExportAdminURLHelper
+
+    export_view_class = ExportView
+
+    def get_admin_urls_for_registration(self):
+        urls = super().get_admin_urls_for_registration()
+        urls += (
+            url(
+                self.url_helper.get_action_url_pattern('export'),
+                self.export_view,
+                name=self.url_helper.get_action_url_name('export')
+            ),
+        )
+
+        return urls
+
+    def export_view(self, request):
+        kwargs = {'model_admin': self}
+        view_class = self.export_view_class
+        return view_class.as_view(**kwargs)(request)
+
+class RegistrationAdmin(ExportModelAdminMixin, ModelAdmin):
     model = JoinusRegistration
     menu_label = 'Event Registrations' 
     list_display = ('event_name','user_info_parsed', 'registration_date', 'wait_list_rewrite',)
@@ -71,23 +203,14 @@ class RegistrationAdmin(ModelAdmin):
                     return 'No'
                 else: 
                     return 'Yes'
-
-    @hooks.register("insert_global_admin_js", order=100)
-    def global_admin_js():
-        """Add custom.js to the admin."""
-        return format_html(
-            '<script src="{}"></script>',
-            static("/js/user_info_parsed.js")
-        )
     
     user_info_parsed.short_description = "Registraiton Info"
     wait_list_rewrite.short_description = "Wait listed"
-    list_filter = ['event_name']
+    list_filter = ['event_name', 'wait_list']
     add_to_settings_menu = True
     exclude_from_explorer = True
     index_template_name = 'ppl_joinus/modeladmin/index.html'
-    #index_view_class = showEvents
-
+    button_helper_class = ExportButtonHelper
 
 modeladmin_register(EventAdmin)
 modeladmin_register(UserAdmin)
