@@ -29,10 +29,10 @@
                     {% if user_can_create %}
                          <div class="right">
                             <div id="csvExportAllEvents" class="addbutton">
-                                {% include 'modeladmin/includes/button.html' with button=view.button_helper.export_button %}
+                                {% include 'modeladmin/includes/button.html' with button=view.button_helper.export_all_events_button %}
                             </div>
                             <div id="csvExportSingleEvent" class="addbutton">
-                                {% include 'modeladmin/includes/button.html' with button=view.button_helper.export_button %}
+                                {% include 'modeladmin/includes/button.html' with button=view.button_helper.export_single_event_button %}
                             </div>
                          </div>
                         <div class="right">
@@ -75,11 +75,11 @@
                         for (var i = 0; i < select_choices.length; i++) {
                             if (select_choices[i].textContent == searchText && selected.classList.contains("selected") == true) {
                             found = select_choices[i];
-                            $('#csvExportSingleEvent').remove()
+                            document.getElementById("csvExportSingleEvent").remove()
                             break;
                              }
                             else {
-                             $('#csvExportAllEvents').remove()   
+                            document.getElementById("csvExportAllEvents").remove()   
                             }
                             }
                         </script>

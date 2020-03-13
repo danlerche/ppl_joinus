@@ -26,35 +26,48 @@ class EventAdmin(ModelAdmin):
     add_to_settings_menu = True
     exclude_from_explorer = False
 
-class UserAdmin(ModelAdmin):
-    model = JoinusUserFormBuilder
-    menu_label = 'Registrants'
-    add_to_settings_menu = True
-    exclude_from_explorer = False
 
 class ExportButtonHelper(ButtonHelper):
 
-    export_button_classnames = ['icon', 'icon-download']
+    export_all_events_button_classnames = ['icon', 'icon-download']
+    export_single_event_button_classnames = ['icon', 'icon-download']
 
-    def export_button(self, classnames_add=None, classnames_exclude=None):
+    def export_all_events_button(self, classnames_add=None, classnames_exclude=None):
         if classnames_add is None:
             classnames_add = []
         if classnames_exclude is None:
             classnames_exclude = []
 
-        classnames = self.export_button_classnames + classnames_add
+        classnames = self.export_all_events_button_classnames + classnames_add
         cn = self.finalise_classname(classnames, classnames_exclude)
         text = _('Export {}'.format(self.verbose_name_plural.title()))
 
         return {
-            'url': self.url_helper.get_action_url('export', query_params=self.request.GET),
+            'url': self.url_helper.get_action_url('export_all_events', query_params=self.request.GET),
+            'label': text,
+            'classname': cn,
+            'title': text,
+        }
+
+    def export_single_event_button(self, classnames_add=None, classnames_exclude=None):
+        if classnames_add is None:
+            classnames_add = []
+        if classnames_exclude is None:
+            classnames_exclude = []
+
+        classnames = self.export_single_event_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        text = _('Export {}'.format(self.verbose_name_plural.title()))
+
+        return {
+            'url': self.url_helper.get_action_url('export_single_event', query_params=self.request.GET),
             'label': text,
             'classname': cn,
             'title': text,
         }
 
 class ExportAdminURLHelper(AdminURLHelper):
-    non_object_specific_actions = ('create', 'choose_parent', 'index', 'export')
+    non_object_specific_actions = ('create', 'choose_parent', 'index', 'export_all_events', 'export_single_event')
 
     def get_action_url(self, action, *args, **kwargs):
         query_params = kwargs.pop('query_params', None)
@@ -77,9 +90,9 @@ class ExportAdminURLHelper(AdminURLHelper):
         return self._get_object_specific_action_url_pattern(action)
 
 
-class ExportView(IndexView):
+class ExportAllEventsView(IndexView):
 
-    def export_csv(self):
+    def export_all_events_csv(self):
         data = self.queryset.all()
 
         data_headings = [field.verbose_name for field
@@ -90,7 +103,7 @@ class ExportView(IndexView):
         # return a CSV instead
         response = HttpResponse(content_type='text/csv; charset=utf-8')
         response['Content-Disposition'] = 'attachment;filename=' + \
-            'registrations.csv'
+            'all_event_registrations.csv'
 
         # Prevents UnicodeEncodeError for labels with non-ansi symbols
         data_headings = [smart_str(label) for label in data_headings]
@@ -126,13 +139,63 @@ class ExportView(IndexView):
 
         return response
 
-        ### todo we need, need, need to export all csv values and headings when the list is filtered, 
-        # or just say screw it. Hide the csv button when not filtered by event and display all values when not 
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        super().dispatch(request, *args, **kwargs)
+        return self.export_all_events_csv()
+
+class ExportSingleEventView(IndexView):
+
+    def export_single_event_csv(self):
+        data = self.queryset.all()
+
+        data_headings = [field.verbose_name for field
+                         in JoinusRegistration._meta.get_fields()]
+
+        del data_headings[1] #removes the user_info heading as it is replaced by parsed json keys
+
+        # return a CSV instead
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = 'attachment;filename=' + \
+            'event_registrations.csv'
+
+        # Prevents UnicodeEncodeError for labels with non-ansi symbols
+        data_headings = [smart_str(label) for label in data_headings]
+
+        writer = csv.writer(response)
+
+        user_csv_headings_list = []
+
+        for heading_info in data:
+            user_json = str(heading_info.user_info)
+            json_loads = json.loads(user_json)
+            user_csv_headings_list = list(json_loads.keys())
+
+        writer.writerow(data_headings + user_csv_headings_list)
+
+        for reg in data:
+            if reg.wait_list == True:
+                reg.wait_list = 'Yes'
+            else:
+                reg.wait_list = 'No'
+            user_csv_values_list = []
+            user_json = str(reg.user_info)
+            json_loads = json.loads(user_json)
+            user_csv_values_list = list(json_loads.values())
+            data_row = []
+            data_row.extend([
+                reg.id, reg.event_name, reg.registration_date, reg.wait_list
+            ])
+
+            writer.writerow(data_row + user_csv_values_list)
+
+        return response
+
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         super().dispatch(request, *args, **kwargs)
-        return self.export_csv()
+        return self.export_single_event_csv()
 
 class ExportModelAdminMixin(object):
     """
@@ -142,23 +205,34 @@ class ExportModelAdminMixin(object):
     button_helper_class = ExportButtonHelper
     url_helper_class = ExportAdminURLHelper
 
-    export_view_class = ExportView
+    export_all_events_view_class = ExportAllEventsView
+    export_single_event_view_class = ExportSingleEventView
 
     def get_admin_urls_for_registration(self):
         urls = super().get_admin_urls_for_registration()
         urls += (
             url(
-                self.url_helper.get_action_url_pattern('export'),
-                self.export_view,
-                name=self.url_helper.get_action_url_name('export')
+                self.url_helper.get_action_url_pattern('export_all_events'),
+                self.export_all_events_view,
+                name=self.url_helper.get_action_url_name('export_all_events')
+            ),
+            url(
+                self.url_helper.get_action_url_pattern('export_single_event'),
+                self.export_single_event_view,
+                name=self.url_helper.get_action_url_name('export_single_event')
             ),
         )
 
         return urls
 
-    def export_view(self, request):
+    def export_all_events_view(self, request):
         kwargs = {'model_admin': self}
-        view_class = self.export_view_class
+        view_class = self.export_all_events_view_class
+        return view_class.as_view(**kwargs)(request)
+
+    def export_single_event_view(self, request):
+        kwargs = {'model_admin': self}
+        view_class = self.export_single_event_view_class
         return view_class.as_view(**kwargs)(request)
 
 class RegistrationAdmin(ExportModelAdminMixin, ModelAdmin):
@@ -213,5 +287,4 @@ class RegistrationAdmin(ExportModelAdminMixin, ModelAdmin):
     button_helper_class = ExportButtonHelper
 
 modeladmin_register(EventAdmin)
-modeladmin_register(UserAdmin)
 modeladmin_register(RegistrationAdmin)
