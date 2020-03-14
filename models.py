@@ -47,8 +47,11 @@ class JoinusEvent(Page):
             event_instance = JoinusEvent.objects.get(id=self.page_ptr_id)
             current_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0).count()
             current_waitlisted = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=1).count()
-            current_spots = self.spots_available - current_registered
-            current_waitlist_spots = self.waitlist_spots_available - current_waitlisted
+            cancelled_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0, cancelled=1).count()
+            cancelled_waitlist = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=1, cancelled=1).count()
+            current_spots = self.spots_available - current_registered + cancelled_registered
+            current_waitlist_spots = self.waitlist_spots_available - current_waitlisted  + cancelled_waitlist
+            
 
             #Gets the registration page that relates to the form chooser selected by the user in the event page
             #Gets the custom form that relates to the selected Registration form page
@@ -93,6 +96,8 @@ class JoinusEvent(Page):
                 'current_registered': current_registered,
                 'current_waitlisted': current_waitlisted,
                 'current_spots': current_spots,
+                'cancelled_registered': cancelled_registered,
+                'cancelled_waitlist': cancelled_waitlist,
                 'current_waitlist_spots': current_waitlist_spots,
                 'event_instance': event_instance,
                 'custom_form': user_form,
@@ -163,6 +168,8 @@ class JoinusRegistration(models.Model):
     event_name = models.ForeignKey('JoinusEvent', default=1, on_delete=models.CASCADE)
     registration_date = models.DateTimeField(auto_now_add=True, blank=True)
     wait_list = models.BooleanField(default=0)
+    cancelled = models.BooleanField(default=0)
+
 
     def __str__(self):
         return self.event_name.title

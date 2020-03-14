@@ -238,7 +238,7 @@ class ExportModelAdminMixin(object):
 class RegistrationAdmin(ExportModelAdminMixin, ModelAdmin):
     model = JoinusRegistration
     menu_label = 'Event Registrations' 
-    list_display = ('event_name','user_info_parsed', 'registration_date', 'wait_list_rewrite',)
+    list_display = ('event_name','user_info_parsed', 'registration_date', 'wait_list_rewrite', 'cancelled_rewrite',)
 
     def user_info_parsed(self, obj):
             user_info_str = str(obj.user_info)
@@ -277,10 +277,17 @@ class RegistrationAdmin(ExportModelAdminMixin, ModelAdmin):
                     return 'No'
                 else: 
                     return 'Yes'
+
+    def cancelled_rewrite(self, obj):
+                if obj.cancelled == 0:
+                    return 'No'
+                else: 
+                    return 'Yes'
     
     user_info_parsed.short_description = "Registraiton Info"
     wait_list_rewrite.short_description = "Wait listed"
-    list_filter = ['event_name', 'wait_list']
+    cancelled_rewrite.short_description = "Cancelled"
+    list_filter = ['event_name', 'wait_list', 'cancelled']
     add_to_settings_menu = True
     exclude_from_explorer = True
     index_template_name = 'ppl_joinus/modeladmin/index.html'
