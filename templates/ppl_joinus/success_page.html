@@ -4,13 +4,10 @@
 
 {% block content %}
 
-
-{{ page.body | richtext }}
-
-
-
 {% for message in messages %}
     <p class="reg-message alert alert-success">{{ message }} </p>
 {% endfor %}
+
+{{ page.body | richtext }}
 
 {% endblock %}

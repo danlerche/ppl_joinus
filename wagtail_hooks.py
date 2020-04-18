@@ -1,7 +1,7 @@
 from wagtail.contrib.modeladmin.options import (
     ModelAdmin, modeladmin_register)
 from wagtail.contrib.modeladmin.views import IndexView
-from .models import JoinusEvent, JoinusUserFormBuilder, JoinusRegistration
+from .models import JoinusEvent, JoinusUserFormBuilder, JoinusRegistration, JoinusFormPage
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.utils.html import format_html
 from django.http import HttpResponse
@@ -21,10 +21,18 @@ from wagtail.contrib.modeladmin.helpers import AdminURLHelper, ButtonHelper
 
 
 class EventAdmin(ModelAdmin):
+    model = JoinusFormPage
+    menu_label = 'Registration Forms'
+    add_to_settings_menu = True
+    exclude_from_explorer = False
+
+
+class RegistrationFormsAdmin(ModelAdmin):
     model = JoinusEvent
     menu_label = 'Events'
     add_to_settings_menu = True
     exclude_from_explorer = False
+
 
 
 class ExportButtonHelper(ButtonHelper):
@@ -295,3 +303,4 @@ class RegistrationAdmin(ExportModelAdminMixin, ModelAdmin):
 
 modeladmin_register(EventAdmin)
 modeladmin_register(RegistrationAdmin)
+modeladmin_register(RegistrationFormsAdmin)

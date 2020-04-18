@@ -15,8 +15,6 @@
 
 <p> Waitlisted cancellations {{ cancelled_waitlist }}</p>
 
-{{ page.body|richtext }}
-
 {% if page.registration_form_chooser == None  %}
 <p class="alert alert-danger">No registration form associated</p>
 
@@ -30,9 +28,14 @@
 {% if current_spots > 0 and page.registration_form_chooser != None %}
 
 <p class="alert alert-success">Registration Open</p>
+
+
 <p>{{ page.date }}</p>
 <p>{{ current_spots }} Spots remaining</p>
 <p>{{ current_waitlist_spots }} spots on the waitlist</p>
+
+{{ page.body|richtext }}
+
 
 <form class="reg-form mb-4" method="POST">
   {% csrf_token %}

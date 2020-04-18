@@ -3,8 +3,9 @@ from django.db import models
 from modelcluster.fields import ParentalKey
 from wagtail.admin.edit_handlers import (
     FieldPanel, FieldRowPanel,
-    InlinePanel, MultiFieldPanel, PageChooserPanel
+    InlinePanel, MultiFieldPanel, PageChooserPanel,
 )
+from django import forms
 from wagtail.core.fields import RichTextField
 from wagtail.contrib.forms.models import AbstractFormField, AbstractForm, AbstractEmailForm, AbstractFormSubmission
 from wagtail.contrib.forms.edit_handlers import FormSubmissionsPanel
@@ -14,6 +15,9 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.utils.html import strip_tags
+from django.conf import settings
 
 RESERVED_LABELS = ['Your Name', 'Email', 'Your Phone Number']
 
@@ -33,12 +37,18 @@ class JoinusEvent(Page):
     spots_available = models.PositiveIntegerField(default=0)
     waitlist_spots_available = models.PositiveIntegerField(default=0)
     registration_form_chooser = models.ForeignKey('JoinusFormPage', default=1, blank=False, on_delete=models.SET_NULL, null=True)
+    notify_email = models.EmailField(max_length=254, null=True, verbose_name="Notify Admin Email")
+    success_email_msg = RichTextField(blank=True, null=True, verbose_name="Body of the success email")
+    waitlist_email_msg = models.CharField(max_length=2000, blank=True, null=True, verbose_name="Body of the waitlist email")
     success_page = models.ForeignKey('SuccessPage', default=1, blank=False, on_delete=models.SET_NULL, null=True)
     content_panels = AbstractForm.content_panels + [
         FieldPanel('body', classname="full"),
         FieldPanel('date', classname="full"),
         FieldPanel('spots_available', classname="full"),
         FieldPanel('waitlist_spots_available', classname="full"),
+        FieldPanel('notify_email', classname="full"),
+        FieldPanel('success_email_msg', classname="full"),
+        FieldPanel('waitlist_email_msg', widget=forms.Textarea, classname="full"),
         PageChooserPanel('registration_form_chooser'),
         PageChooserPanel('success_page'),
     ]
@@ -67,8 +77,16 @@ class JoinusEvent(Page):
                     registration = JoinusRegistration(event_name=event_instance, user_info_id=get_primary[0], wait_list=0)
                     registration.save()
                     #There is a bug here. When the admin changes the spots available or the waitlist amount after people start registering
-                    messages.success(request, 'You have signed up for ' + self.title)
+                    messages.success(request, 'You have succesfully registered for ' + self.title)
                     url = self.success_page.url
+
+                    submission_email = custom_form.cleaned_data['email']
+                    subject = 'You have succesfully registered for ' + self.title
+                    plain_message = strip_tags(self.success_email_msg)
+                    from_email = settings.EMAIL_HOST_USER
+                    recipient_list = [submission_email]
+                    send_mail(subject, plain_message, from_email, [submission_email], html_message=self.success_email_msg)
+
                     return redirect(url, permanent=False)
 
                 elif custom_form.is_valid() and current_spots == 0 and current_waitlist_spots > 0:
@@ -76,8 +94,17 @@ class JoinusEvent(Page):
                     user_instance = get_primary
                     registration = JoinusRegistration(event_name=event_instance, user_info_id=get_primary[0], wait_list=1)
                     registration.save()
-                    messages.success(request, 'You have signed up for the ' + self.title + ' waitlist')
+                    messages.success(request, 'You have been added to the ' + self.title + ' waitlist')
                     url = self.success_page.url
+                    submission_email = custom_form.cleaned_data['email']
+                    send_mail(
+                        subject = 'You have been added to the waitlist for ' + self.title,
+                        message = self.success_email_msg,
+                        from_email = settings.EMAIL_HOST_USER,
+                        recipient_list = [submission_email],
+                        fail_silently=False,
+                    )
+
                     return redirect(url, permanent=False)
 
                 else:
