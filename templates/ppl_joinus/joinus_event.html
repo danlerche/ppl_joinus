@@ -1,0 +1,61 @@
+  {% extends "base.html" %}
+{% load wagtailcore_tags static crispy_forms_tags honeypot_tags %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/honeypot.css' %}">
+{% endblock extra_css %}
+{% block extra_js %}
+<script src="{% static 'js/honeypot.js' %}"></script>
+{% endblock extra_js %}
+
+{% block content %}
+
+<div class="container">
+<div class="row">
+<div id="contentArea" class="content col-xl-12">
+<div class="main-title mt-4 mb-4"><h1>{{ page.title }}</h1></div>
+
+{% if page.registration_form_chooser == None  %}
+<div class="alert alert-danger">No registration form associated</div>
+{% endif %}
+
+{% if current_spots == 0 and current_waitlist_spots == 0 %}
+<div class="alert alert-danger">Registration is now full</div>
+{% endif %}
+
+{% if current_spots > 0 and page.registration_form_chooser != None %}
+<div class="alert alert-success">Registration Open</div>
+<div>{{ page.date }}</div>
+<div>{{ current_spots }} Spots remaining</div>
+<div>{{ current_waitlist_spots }} spots on the waitlist</div>
+
+<div class="mt-2">{{ page.body|richtext }}</div>
+
+<form class="mb-4" method="POST" class="col-xl-6 mb-2">
+  {% honeypot_fields page.honeypot %}
+  {% csrf_token %}
+  {{ custom_form|crispy }}
+ <input type="submit" class="btn btn-primary mt-2" value="Register">
+</form>
+
+{% endif %}
+
+{% if current_spots == 0 and current_waitlist_spots > 0 and page.registration_form_chooser != None and messages is not True %}
+<p class="alert bg-warning">You will be registered for the waitlist</p>
+<p>{{ current_waitlist_spots }} waitlist spot remaining</p>
+
+
+<form class="mb-4" method="POST" class="col-xl-6 mb-2">
+  {% honeypot_fields page.honeypot %}
+  {% csrf_token %}
+  {{ custom_form|crispy }}
+ <input type="submit" class="btn btn-primary mt-2" value="Register">
+</form>
+
+{% endif %}
+
+</div>
+</div>
+</div>
+
+
+{% endblock %}
