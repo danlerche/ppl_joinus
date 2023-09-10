@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.utils.html import strip_tags
 from django.conf import settings
+from wagtail.contrib.forms.views import SubmissionsListView
 
 RESERVED_LABELS = ['Your Name', 'Email', 'Your Phone Number']
 
@@ -185,7 +186,7 @@ class JoinusFormPage(AbstractEmailForm):
         verbose_name = "Joinus Form Builder"
 
 
-class JoinusUserFormBuilder(AbstractFormSubmission):
+class JoinusUserFormBuilder(AbstractFormSubmission, SubmissionsListView):
     pass
 
 class JoinusRegistration(models.Model):

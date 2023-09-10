@@ -33,8 +33,6 @@ class RegistrationFormsAdmin(ModelAdmin):
     add_to_settings_menu = True
     exclude_from_explorer = False
 
-
-
 class ExportButtonHelper(ButtonHelper):
 
     export_all_events_button_classnames = ['icon', 'icon-download']
