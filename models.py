@@ -14,7 +14,6 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.utils.html import strip_tags
 from django.conf import settings
-from wagtail.contrib.forms.views import SubmissionsListView
 
 RESERVED_LABELS = ['Your Name', 'Email', 'Your Phone Number']
 
@@ -186,7 +185,7 @@ class JoinusFormPage(AbstractEmailForm):
         verbose_name = "Joinus Form Builder"
 
 
-class JoinusUserFormBuilder(AbstractFormSubmission, SubmissionsListView):
+class JoinusUserFormBuilder(AbstractFormSubmission):
     pass
 
 class JoinusRegistration(models.Model):
@@ -195,6 +194,15 @@ class JoinusRegistration(models.Model):
     registration_date = models.DateTimeField(auto_now_add=True, blank=True)
     wait_list = models.BooleanField(default=0)
     cancelled = models.BooleanField(default=0)
+
+    def user_info_parsed(self):
+        user_info = str(self.user_info).replace("'", '"')
+        json_loads = json.loads(user_info)
+        user_info_list = list(json_loads.values())
+        user_info_labels = list(json_loads.keys())
+        return user_info_labels + user_info_list
+
+    #perhaps we can render these values in the admin template
 
 
     def __str__(self):

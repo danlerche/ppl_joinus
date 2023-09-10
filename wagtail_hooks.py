@@ -3,12 +3,18 @@ from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 from django.utils.html import format_html
 import json
+from wagtail.admin.panels import FieldPanel
 
 class JoinusEventAdmin(SnippetViewSet):
     model = JoinusEvent
     menu_label = 'Joinus Event'
     icon = 'date'
     base_url_path = "joinus-event"
+
+    panels = [
+    	FieldPanel('body'), 
+    	FieldPanel('date'),
+    ]
 
 class JoinusFormAdmin(SnippetViewSet):
     model = JoinusFormPage
@@ -21,13 +27,10 @@ class JoinusRegistrationAdmin(SnippetViewSet):
 	menu_label = 'Registrations' 
 	icon = 'doc-full'
 	base_url_path = 'reg'
-	list_display = ('event_name', 'user_info', 'registration_date', 'wait_list', 'cancelled',)
-	
-	def user_info_parsed(self, obj):
-		user_info_str = str(obj.user_info)
-		user_info_loads = json.loads(user_info_str)
-		print(user_info_loads)
+	list_display = ('event_name', 'user_info_parsed', 'registration_date', 'wait_list', 'cancelled',)
+	index_template_name = 'ppl_joinus/joinusregistration/index.html'
 
+	
 	#	user_info_list = list(user_info_loads.values())
 	#	user_label_list = list(user_info_loads.keys())
 	#	format_label_info = ""
