@@ -130,6 +130,30 @@ class JoinusEvent(Page):
     class Meta:
         verbose_name = "Joinus Event"
 
+
+    def total_registered(self):
+        total_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0).count()
+        return total_registered
+
+    def total_spaces(self):
+        return self.spots_available
+
+    def spaces_remaining(self):
+        current_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0).count()
+        cancelled_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0, cancelled=1).count()
+        spaces_remaining = self.spots_available - current_registered + cancelled_registered
+        return spaces_remaining
+
+    def waitlist(self):
+        return self.waitlist_spots_available
+
+    def waitlist_remaining(self):
+        cancelled_waitlist = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=1, cancelled=1).count()
+        current_waitlisted = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=1).count()
+        waitlist = self.waitlist_spots_available - current_waitlisted  + cancelled_waitlist
+        return waitlist
+
+
 class JoinusFormField(AbstractFormField):
     form_builder_page = ParentalKey('JoinusFormPage', on_delete=models.CASCADE, related_name='form_fields')
     label = models.CharField(

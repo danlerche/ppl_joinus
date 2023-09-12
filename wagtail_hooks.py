@@ -10,11 +10,7 @@ class JoinusEventAdmin(SnippetViewSet):
     menu_label = 'Joinus Event'
     icon = 'date'
     base_url_path = "joinus-event"
-
-    panels = [
-    	FieldPanel('body'), 
-    	FieldPanel('date'),
-    ]
+    list_display = ('title', 'total_registered', 'total_spaces', 'spaces_remaining', 'waitlist', 'waitlist_remaining')
 
 class JoinusFormAdmin(SnippetViewSet):
     model = JoinusFormPage
@@ -29,7 +25,6 @@ class JoinusRegistrationAdmin(SnippetViewSet):
 	base_url_path = 'reg'
 	list_display = ('event_name', 'user_info_parsed', 'registration_date', 'wait_list', 'cancelled',)
 	index_template_name = 'ppl_joinus/joinusregistration/index.html'
-
 	
 	#	user_info_list = list(user_info_loads.values())
 	#	user_label_list = list(user_info_loads.keys())
