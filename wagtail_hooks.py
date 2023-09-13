@@ -1,6 +1,6 @@
 from ppl_joinus.models import JoinusEvent, JoinusUserFormBuilder, JoinusRegistration, JoinusFormPage
 from wagtail.snippets.models import register_snippet
-from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
+from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup, DeleteView
 from django.utils.html import format_html
 import json
 from wagtail.admin.panels import FieldPanel
@@ -10,7 +10,7 @@ class JoinusEventAdmin(SnippetViewSet):
     menu_label = 'Joinus Event'
     icon = 'date'
     base_url_path = "joinus-event"
-    list_display = ('title', 'total_registered', 'total_spaces', 'spaces_remaining', 'waitlist', 'waitlist_remaining')
+    list_display = ('title', 'total_registered', 'spaces_remaining', 'total_spaces', 'waitlist', 'waitlist_remaining')
 
 class JoinusFormAdmin(SnippetViewSet):
     model = JoinusFormPage
@@ -18,13 +18,20 @@ class JoinusFormAdmin(SnippetViewSet):
     icon = 'form'
     base_url_path = "joinus-form"
 
+#https://stackoverflow.com/questions/69012491/override-wagtail-delete-confirmation-message
+class MemberDeleteView(DeleteView):
+    def confirmation_message(self):
+    	#delete_user = JoinusUserFormBuilder.objects.get(id=self.user_info)
+    	return 'deleted'
+
 class JoinusRegistrationAdmin(SnippetViewSet):
 	model = JoinusRegistration
 	menu_label = 'Registrations' 
 	icon = 'doc-full'
 	base_url_path = 'reg'
-	list_display = ('event_name', 'user_info_parsed', 'registration_date', 'wait_list', 'cancelled',)
+	list_display = ('name', 'event_name', 'registration_date', 'wait_list', 'cancelled',)
 	index_template_name = 'ppl_joinus/joinusregistration/index.html'
+	delete_view_class = MemberDeleteView
 	
 	#	user_info_list = list(user_info_loads.values())
 	#	user_label_list = list(user_info_loads.keys())

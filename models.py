@@ -15,6 +15,7 @@ from django.core.mail import send_mail
 from django.utils.html import strip_tags
 from django.conf import settings
 
+
 RESERVED_LABELS = ['Your Name', 'Email', 'Your Phone Number']
 
 def validate_label(value):
@@ -219,18 +220,15 @@ class JoinusRegistration(models.Model):
     wait_list = models.BooleanField(default=0)
     cancelled = models.BooleanField(default=0)
 
-    def user_info_parsed(self):
+    def name(self):
         user_info = str(self.user_info).replace("'", '"')
         json_loads = json.loads(user_info)
-        user_info_list = list(json_loads.values())
-        user_info_labels = list(json_loads.keys())
-        return user_info_labels + user_info_list
-
-    #perhaps we can render these values in the admin template
-
+        return json_loads['your_name']
 
     def __str__(self):
         return self.event_name.title
 
     class Meta:
         verbose_name = "Event Registration"
+
+        #TO DO: 1) Delete The user Info when the registration is deleted
