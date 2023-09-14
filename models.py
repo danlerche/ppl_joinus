@@ -14,7 +14,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.utils.html import strip_tags
 from django.conf import settings
-
+from wagtail.snippets.views.snippets import DeleteView
 
 RESERVED_LABELS = ['Your Name', 'Email', 'Your Phone Number']
 
@@ -154,7 +154,6 @@ class JoinusEvent(Page):
         waitlist = self.waitlist_spots_available - current_waitlisted  + cancelled_waitlist
         return waitlist
 
-
 class JoinusFormField(AbstractFormField):
     form_builder_page = ParentalKey('JoinusFormPage', on_delete=models.CASCADE, related_name='form_fields')
     label = models.CharField(
@@ -180,7 +179,6 @@ class JoinusFormPage(AbstractEmailForm):
         get_submission = self.get_submission_class().objects.filter(pk=create_submission.id).values('id')
         global get_primary
         get_primary = [id['id'] for id in get_submission]
-
 
     def get_form_fields(self):
 
@@ -231,4 +229,4 @@ class JoinusRegistration(models.Model):
     class Meta:
         verbose_name = "Event Registration"
 
-        #TO DO: 1) Delete The user Info when the registration is deleted
+    #TO DO: 1) Delete The user Info when the registration is deleted

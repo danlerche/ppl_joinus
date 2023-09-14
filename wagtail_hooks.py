@@ -21,8 +21,9 @@ class JoinusFormAdmin(SnippetViewSet):
 #https://stackoverflow.com/questions/69012491/override-wagtail-delete-confirmation-message
 class MemberDeleteView(DeleteView):
     def confirmation_message(self):
-    	#delete_user = JoinusUserFormBuilder.objects.get(id=self.user_info)
-    	return 'deleted'
+    	delete_user = JoinusUserFormBuilder.objects.get(id=self.object.user_info.id).delete()
+    	#show_reg = self.model.objects.get(id=self.object.id)
+    	return delete_user
 
 class JoinusRegistrationAdmin(SnippetViewSet):
 	model = JoinusRegistration
