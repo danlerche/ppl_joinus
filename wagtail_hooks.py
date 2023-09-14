@@ -4,34 +4,46 @@ from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup,
 from django.utils.html import format_html
 import json
 from wagtail.admin.panels import FieldPanel
+from wagtail.admin.filters import WagtailFilterSet
 
 class JoinusEventAdmin(SnippetViewSet):
     model = JoinusEvent
     menu_label = 'Joinus Event'
     icon = 'date'
     base_url_path = "joinus-event"
-    list_display = ('title', 'total_registered', 'spaces_remaining', 'total_spaces', 'waitlist', 'waitlist_remaining')
+    list_display = ('title', 'total_registered', 'spaces_remaining', 'total_spaces', 'registered_for_waitlist', 'waitlist_remaining')
 
-class JoinusFormAdmin(SnippetViewSet):
-    model = JoinusFormPage
-    menu_label = 'Registration Form'
-    icon = 'form'
-    base_url_path = "joinus-form"
+    panels = [
+    FieldPanel('spots_available'),
+    FieldPanel('waitlist_spots_available'),
+    FieldPanel('registration_form_chooser'),
+    FieldPanel('notify_email'),
+    FieldPanel('success_email_msg'),
+    FieldPanel('waitlist_email_msg'),
+    FieldPanel('success_page'),
+    ]
 
 #https://stackoverflow.com/questions/69012491/override-wagtail-delete-confirmation-message
 class MemberDeleteView(DeleteView):
     def confirmation_message(self):
-    	delete_user = JoinusUserFormBuilder.objects.get(id=self.object.user_info.id).delete()
-    	#show_reg = self.model.objects.get(id=self.object.id)
-    	return delete_user
+    	#Needs to be deleted on the final delete page, not on the confirm page. 
+    	cancel_user = JoinusUserFormBuilder.objects.get(id=self.object.user_info.id)
+    	cancel_user.delete()
+    	return cancel_user
+
+class FilterByEvent(WagtailFilterSet):
+	class Meta:
+		model = JoinusRegistration
+		fields = ['event_name']
 
 class JoinusRegistrationAdmin(SnippetViewSet):
 	model = JoinusRegistration
 	menu_label = 'Registrations' 
 	icon = 'doc-full'
 	base_url_path = 'reg'
-	list_display = ('name', 'event_name', 'registration_date', 'wait_list', 'cancelled',)
+	list_display = ('name', 'event_name', 'registration_date' ,'wait_list')
 	index_template_name = 'ppl_joinus/joinusregistration/index.html'
+	filterset_class = FilterByEvent
 	delete_view_class = MemberDeleteView
 	
 	#	user_info_list = list(user_info_loads.values())
@@ -62,10 +74,16 @@ class JoinusRegistrationAdmin(SnippetViewSet):
 #			outer_html = outer_html_beg + formated_html + outer_html_end
 #			return format_html(outer_html)
 
+
+class JoinusFormAdmin(SnippetViewSet):
+    model = JoinusFormPage
+    menu_label = 'Registration Form'
+    icon = 'form'
+    base_url_path = "joinus-form"
+
 class JoinusEventAdminGroup(SnippetViewSetGroup):
 	menu_label = 'Registration'
 	menu_icon = 'list-ul'
-	menu_order = 200
-	items = (JoinusEventAdmin, JoinusFormAdmin, JoinusRegistrationAdmin)
+	items = (JoinusEventAdmin, JoinusRegistrationAdmin, JoinusFormAdmin)
 
 register_snippet(JoinusEventAdminGroup)

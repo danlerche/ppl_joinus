@@ -16,7 +16,7 @@ from django.utils.html import strip_tags
 from django.conf import settings
 from wagtail.snippets.views.snippets import DeleteView
 
-RESERVED_LABELS = ['Your Name', 'Email', 'Your Phone Number']
+RESERVED_LABELS = ['Your Name', 'Email']
 
 def validate_label(value):
     if value in RESERVED_LABELS:
@@ -54,10 +54,8 @@ class JoinusEvent(Page):
             event_instance = JoinusEvent.objects.get(id=self.page_ptr_id)
             current_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0).count()
             current_waitlisted = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=1).count()
-            cancelled_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0, cancelled=1).count()
-            cancelled_waitlist = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=1, cancelled=1).count()
-            current_spots = self.spots_available - current_registered + cancelled_registered
-            current_waitlist_spots = self.waitlist_spots_available - current_waitlisted  + cancelled_waitlist
+            current_spots = self.spots_available - current_registered 
+            current_waitlist_spots = self.waitlist_spots_available - current_waitlisted
             
 
             #Gets the registration page that relates to the form chooser selected by the user in the event page
@@ -73,7 +71,6 @@ class JoinusEvent(Page):
                     user_instance = get_primary
                     registration = JoinusRegistration(event_name=event_instance, user_info_id=get_primary[0], wait_list=0)
                     registration.save()
-                    #There is a bug here. When the admin changes the spots available or the waitlist amount after people start registering
                     messages.success(request, 'You have succesfully registered for ' + self.title)
                     url = self.success_page.url
                     
@@ -93,16 +90,9 @@ class JoinusEvent(Page):
                     user_instance = get_primary
                     registration = JoinusRegistration(event_name=event_instance, user_info_id=get_primary[0], wait_list=1)
                     registration.save()
-                    messages.success(request, 'You have been added to the ' + self.title + ' waitlist')
+                    messages.success(request, 'You have been added to the waitlist for ' + self.title)
                     url = self.success_page.url
-                    submission_email = custom_form.cleaned_data['email']
-                    send_mail(
-                        subject = 'You have been added to the waitlist for ' + self.title,
-                        message = self.success_email_msg,
-                        from_email = settings.EMAIL_HOST_USER,
-                        recipient_list = [submission_email],
-                        fail_silently=False,
-                    )
+                    #email function here
 
                     return redirect(url, permanent=False)
 
@@ -122,8 +112,6 @@ class JoinusEvent(Page):
                 'current_registered': current_registered,
                 'current_waitlisted': current_waitlisted,
                 'current_spots': current_spots,
-                'cancelled_registered': cancelled_registered,
-                'cancelled_waitlist': cancelled_waitlist,
                 'current_waitlist_spots': current_waitlist_spots,
                 'event_instance': event_instance,
                 'custom_form': user_form,
@@ -140,18 +128,16 @@ class JoinusEvent(Page):
         return self.spots_available
 
     def spaces_remaining(self):
-        current_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0).count()
-        cancelled_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0, cancelled=1).count()
-        spaces_remaining = self.spots_available - current_registered + cancelled_registered
+        total_registered = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=0).count()
+        spaces_remaining = self.spots_available - total_registered
         return spaces_remaining
 
-    def waitlist(self):
+    def registered_for_waitlist(self):
         return self.waitlist_spots_available
 
     def waitlist_remaining(self):
-        cancelled_waitlist = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=1, cancelled=1).count()
         current_waitlisted = JoinusRegistration.objects.filter(event_name_id=self.page_ptr_id, wait_list=1).count()
-        waitlist = self.waitlist_spots_available - current_waitlisted  + cancelled_waitlist
+        waitlist = self.waitlist_spots_available - current_waitlisted
         return waitlist
 
 class JoinusFormField(AbstractFormField):
@@ -185,12 +171,6 @@ class JoinusFormPage(AbstractEmailForm):
             fields = list(super(JoinusFormPage, self).get_form_fields())
 
             fields.insert(0, JoinusFormField(
-                label='Phone number',
-                field_type='singleline',
-                required=False,
-                help_text="Valid phone Numer"))
-
-            fields.insert(0, JoinusFormField(
                 label='Email',
                 field_type='email',
                 required=True,
@@ -216,7 +196,6 @@ class JoinusRegistration(models.Model):
     event_name = models.ForeignKey('JoinusEvent', default=1, on_delete=models.CASCADE)
     registration_date = models.DateTimeField(auto_now_add=True, blank=True)
     wait_list = models.BooleanField(default=0)
-    cancelled = models.BooleanField(default=0)
 
     def name(self):
         user_info = str(self.user_info).replace("'", '"')
