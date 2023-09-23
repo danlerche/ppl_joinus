@@ -34,7 +34,6 @@ class JoinusEvent(Page):
     spots_available = models.PositiveIntegerField(default=0)
     waitlist_spots_available = models.PositiveIntegerField(default=0)
     registration_form_chooser = models.ForeignKey('JoinusFormPage', default=1, blank=False, on_delete=models.SET_NULL, null=True)
-    notify_email = models.EmailField(max_length=254, blank="true", null=True, verbose_name="Notify Admin Email")
     success_email_msg = RichTextField(blank=True, null=True, verbose_name="Body of the success email")
     waitlist_email_msg = models.CharField(max_length=2000, blank=True, null=True, verbose_name="Body of the waitlist email")
     success_page = models.ForeignKey('SuccessPage', default=1, blank=False, on_delete=models.SET_NULL, null=True)
@@ -43,7 +42,6 @@ class JoinusEvent(Page):
         FieldPanel('date', classname="full"),
         FieldPanel('spots_available', classname="full"),
         FieldPanel('waitlist_spots_available', classname="full"),
-        FieldPanel('notify_email', classname="full"),
         FieldPanel('success_email_msg', classname="full"),
         FieldPanel('waitlist_email_msg', widget=forms.Textarea, classname="full"),
         PageChooserPanel('registration_form_chooser'),
@@ -74,14 +72,13 @@ class JoinusEvent(Page):
                     messages.success(request, 'You have succesfully registered for ' + self.title)
                     url = self.success_page.url
                     
-                    #turning this off for now. Needs validation
-
-                    #submission_email = custom_form.cleaned_data['email']
-                    #subject = 'You have succesfully registered for ' + self.title
-                    #plain_message = strip_tags(self.success_email_msg)
-                    #from_email = settings.EMAIL_HOST_USER
-                    #recipient_list = [submission_email]
-                    #send_mail(subject, plain_message, from_email, [submission_email], html_message=self.success_email_msg)
+                    submission_email = custom_form.cleaned_data['email']
+                    subject = 'You have succesfully registered for ' + self.title
+                    plain_message = strip_tags(self.success_email_msg)
+                    from_email = settings.EMAIL_HOST_USER
+                    recipient_list = [submission_email]
+                    if from_email !='':
+                        send_mail(subject, plain_message, from_email, [submission_email], html_message=self.success_email_msg)
 
                     return redirect(url, permanent=False)
 
