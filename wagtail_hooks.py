@@ -24,11 +24,12 @@ class JoinusEventAdmin(SnippetViewSet):
 
 #https://stackoverflow.com/questions/69012491/override-wagtail-delete-confirmation-message
 class MemberDeleteView(DeleteView):
-    def confirmation_message(self):
-    	#Needs to be deleted on the final delete page, not on the confirm page. Try redirect
-    	cancel_user = JoinusUserFormBuilder.objects.get(id=self.object.user_info.id)
-    	cancel_user.delete()
-    	return cancel_user
+
+	def get_success_message(self):
+		cancel_user = JoinusUserFormBuilder.objects.get(id=self.object.user_info.id)
+		cancel_user.delete()
+		msg = 'The following user info has been deleted:  ' + str(cancel_user)
+		return msg
 
 class FilterByEvent(WagtailFilterSet):
 	class Meta:
