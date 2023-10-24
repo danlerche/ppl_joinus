@@ -21,7 +21,8 @@ class JoinusEventAdmin(SnippetViewSet):
     FieldPanel('waitlist_email_msg'),
     ]
 
-class MemberDeleteView(DeleteView):
+class DeleteUserInfoView(DeleteView):
+	#deletes the user info when a regration is also deleted
 	def get_success_message(self):
 		cancel_user = JoinusUserFormBuilder.objects.get(id=self.object.user_info.id)
 		cancel_user.delete()
@@ -41,7 +42,7 @@ class JoinusRegistrationAdmin(SnippetViewSet):
 	list_display = ('name', 'event_name', 'registration_date' ,'wait_list')
 	index_template_name = 'ppl_joinus/joinusregistration/index.html'
 	filterset_class = FilterByEvent
-	delete_view_class = MemberDeleteView
+	delete_view_class = DeleteUserInfoView
 
 class JoinusFormAdmin(SnippetViewSet):
     model = JoinusFormPage
