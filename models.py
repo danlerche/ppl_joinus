@@ -22,12 +22,6 @@ def validate_label(value):
     if value in RESERVED_LABELS:
         raise ValidationError("'%s' is reserved." % value)
 
-class SuccessPage(Page):
-    body = RichTextField(blank=True)
-    content_panels = Page.content_panels + [
-        FieldPanel('body', classname="full"),
-    ]
-
 class JoinusEvent(Page):
     body = RichTextField(blank=True)
     date = models.DateTimeField()
@@ -36,7 +30,7 @@ class JoinusEvent(Page):
     registration_form_chooser = models.ForeignKey('JoinusFormPage', default=1, blank=False, on_delete=models.SET_NULL, null=True)
     success_email_msg = RichTextField(blank=True, null=True, verbose_name="Body of the success email")
     waitlist_email_msg = models.CharField(max_length=2000, blank=True, null=True, verbose_name="Body of the waitlist email")
-    success_page = models.ForeignKey('SuccessPage', default=1, blank=False, on_delete=models.SET_NULL, null=True)
+    success_page = models.ForeignKey('wagtailcore.Page', blank=False, on_delete=models.SET_NULL, null=True, related_name="registration_success")
     content_panels = AbstractForm.content_panels + [
         FieldPanel('body', classname="full"),
         FieldPanel('date', classname="full"),

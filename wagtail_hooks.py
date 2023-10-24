@@ -19,12 +19,9 @@ class JoinusEventAdmin(SnippetViewSet):
     FieldPanel('registration_form_chooser'),
     FieldPanel('success_email_msg'),
     FieldPanel('waitlist_email_msg'),
-    FieldPanel('success_page'),
     ]
 
-#https://stackoverflow.com/questions/69012491/override-wagtail-delete-confirmation-message
 class MemberDeleteView(DeleteView):
-
 	def get_success_message(self):
 		cancel_user = JoinusUserFormBuilder.objects.get(id=self.object.user_info.id)
 		cancel_user.delete()
@@ -45,35 +42,6 @@ class JoinusRegistrationAdmin(SnippetViewSet):
 	index_template_name = 'ppl_joinus/joinusregistration/index.html'
 	filterset_class = FilterByEvent
 	delete_view_class = MemberDeleteView
-	
-	#	user_info_list = list(user_info_loads.values())
-	#	user_label_list = list(user_info_loads.keys())
-	#	format_label_info = ""
-	#	format_user_info = ""
-	#	pair_to_list = []
-	#	format_label_to_list = []
-	#	format_values_to_list = []
-	#	formated_html = ""
-
-	#	for add_th_tags in user_label_list:
-	#		format_label_info = format_html('<span class="field-user_label_items col-sm"><strong>{}{}</strong></span>{}', add_th_tags, ': ', '*')
-	#		format_label_to_list += format_label_info.split('*')
-	#		del format_label_to_list[-1]
-#
-#		for add_td_tags in user_info_list:
-#			format_user_info = format_html('<span class="field-user_value_items col-sm">{}</span><br/>', add_td_tags)
-#			format_values_to_list += format_user_info.split('*')
-#
-#		for pair_lists_to_tuple in zip (format_label_to_list, format_values_to_list):
-#			pair_to_list = list(pair_lists_to_tuple)
-#			for i in pair_to_list:
-#				formated_html += format_html(i)
-#
-#			outer_html_beg = '<div class="field-reg-item">'
-#			outer_html_end = '</div>'
-#			outer_html = outer_html_beg + formated_html + outer_html_end
-#			return format_html(outer_html)
-
 
 class JoinusFormAdmin(SnippetViewSet):
     model = JoinusFormPage
