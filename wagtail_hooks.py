@@ -11,7 +11,7 @@ class JoinusEventAdmin(SnippetViewSet):
     menu_label = 'Joinus Event'
     icon = 'date'
     base_url_path = "joinus-event"
-    list_display = ('title', 'total_registered', 'spaces_remaining', 'total_spaces', 'registered_for_waitlist', 'waitlist_remaining')
+    list_display = ('title', 'total_registered', 'spaces_remaining', 'total_spaces', 'waitlist_spots', 'waitlist_remaining')
 
     panels = [
     FieldPanel('spots_available'),

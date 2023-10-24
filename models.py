@@ -123,7 +123,7 @@ class JoinusEvent(Page):
         spaces_remaining = self.spots_available - total_registered
         return spaces_remaining
 
-    def registered_for_waitlist(self):
+    def waitlist_spots(self):
         return self.waitlist_spots_available
 
     def waitlist_remaining(self):
