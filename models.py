@@ -189,14 +189,11 @@ class JoinusRegistration(models.Model):
     wait_list = models.BooleanField(default=0)
 
     def name(self):
-        user_info = str(self.user_info).replace("'", '"')
-        json_loads = json.loads(user_info)
-        return json_loads['your_name']
+        user_info = self.user_info.form_data
+        return user_info.get('your_name', None)
 
     def __str__(self):
         return self.event_name.title
 
     class Meta:
         verbose_name = "Event Registration"
-
-    #TO DO: 1) Delete The user Info when the registration is deleted
