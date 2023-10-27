@@ -46,7 +46,8 @@ class JoinusRegistrationAdmin(SnippetViewSet):
 	edit_template_name = 'ppl_joinus/admin_snippet/edit.html'
 
 	edit_handler = TabbedInterface([
-        ObjectList([FieldPanel("user_info", read_only=True)], heading="user info"),
+        ObjectList([FieldPanel("registration_date", read_only=True), FieldPanel("user_info", read_only=True), FieldPanel("wait_list")], 
+        	heading="Registrant"),
     ])
 
 class JoinusFormAdmin(SnippetViewSet):
