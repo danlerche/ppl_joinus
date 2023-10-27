@@ -3,7 +3,7 @@ from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup, DeleteView
 from django.utils.html import format_html
 import json
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, TabbedInterface, ObjectList
 from wagtail.admin.filters import WagtailFilterSet
 
 class JoinusEventAdmin(SnippetViewSet):
@@ -43,6 +43,11 @@ class JoinusRegistrationAdmin(SnippetViewSet):
 	index_template_name = 'ppl_joinus/joinusregistration/index.html'
 	filterset_class = FilterByEvent
 	delete_view_class = DeleteUserInfoView
+	edit_template_name = 'ppl_joinus/admin_snippet/edit.html'
+
+	edit_handler = TabbedInterface([
+        ObjectList([FieldPanel("user_info", read_only=True)], heading="user info"),
+    ])
 
 class JoinusFormAdmin(SnippetViewSet):
     model = JoinusFormPage
