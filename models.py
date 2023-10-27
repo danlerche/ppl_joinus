@@ -192,6 +192,10 @@ class JoinusRegistration(models.Model):
         user_info = self.user_info.form_data
         return user_info.get('your_name', None)
 
+    def email(self):
+        email = self.user_info.form_data
+        return email.get('email', None)
+
     def __str__(self):
         return self.event_name.title
 

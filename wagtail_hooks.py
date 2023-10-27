@@ -5,6 +5,8 @@ from django.utils.html import format_html
 import json
 from wagtail.admin.panels import FieldPanel, TabbedInterface, ObjectList
 from wagtail.admin.filters import WagtailFilterSet
+from wagtail.snippets import widgets as wagtailsnippets_widgets
+from wagtail import hooks
 
 class JoinusEventAdmin(SnippetViewSet):
     model = JoinusEvent
@@ -34,12 +36,13 @@ class FilterByEvent(WagtailFilterSet):
 		model = JoinusRegistration
 		fields = ['event_name']
 
+
 class JoinusRegistrationAdmin(SnippetViewSet):
 	model = JoinusRegistration
 	menu_label = 'Registrations' 
 	icon = 'doc-full'
 	base_url_path = 'reg'
-	list_display = ('name', 'event_name', 'registration_date' ,'wait_list')
+	list_display = ('name','email', 'event_name', 'registration_date' ,'wait_list')
 	index_template_name = 'ppl_joinus/joinusregistration/index.html'
 	filterset_class = FilterByEvent
 	delete_view_class = DeleteUserInfoView
