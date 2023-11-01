@@ -2,11 +2,14 @@ from ppl_joinus.models import JoinusEvent, JoinusUserFormBuilder, JoinusRegistra
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup, DeleteView
 from django.utils.html import format_html
-import json
+import json, csv
+from django.http import HttpResponse
 from wagtail.admin.panels import FieldPanel, TabbedInterface, ObjectList
 from wagtail.admin.filters import WagtailFilterSet
-from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail import hooks
+from wagtail.snippets.bulk_actions.snippet_bulk_action import SnippetBulkAction
+from wagtail.admin.menu import MenuItem
+from wagtail.admin.views.bulk_action import BulkAction
 
 class JoinusEventAdmin(SnippetViewSet):
     model = JoinusEvent
@@ -36,7 +39,6 @@ class FilterByEvent(WagtailFilterSet):
 		model = JoinusRegistration
 		fields = ['event_name']
 
-
 class JoinusRegistrationAdmin(SnippetViewSet):
 	model = JoinusRegistration
 	menu_label = 'Registrations' 
@@ -52,6 +54,33 @@ class JoinusRegistrationAdmin(SnippetViewSet):
         ObjectList([FieldPanel("registration_date", read_only=True), FieldPanel("user_info", read_only=True), FieldPanel("wait_list")], 
         	heading="Registrant"),
     ])
+
+@hooks.register('register_bulk_action')
+class ExportCSV(BulkAction):
+	display_name = "Export CSV"
+	aria_label = "Export CSV"
+	action_type = "export_csv"
+	template_name = "ppl_joinus/admin_snippet/export_csv.html"
+	models = [JoinusRegistration]
+	
+	@hooks.register("before_bulk_action")
+	def hook_function(request, action_type, objects, action_class_instance, **kwargs):
+		if action_type == 'export_csv':
+			response = HttpResponse(content_type='text/csv')
+			response['Content-Disposition'] = 'attachment; filename="export_registration_info.csv"'
+			
+			writer = csv.writer(response)
+			fieldnames = [field.name for field in JoinusRegistration._meta.get_fields()]
+
+			writer.writerow(fieldnames)
+
+			#for obj in JoinusRegistration.objects.all():
+			#	writer.writerow([str(getattr(obj, field)) for field in fieldnames])
+			for obj in objects:
+				writer.writerow([str(getattr(obj, field)) for field in fieldnames])
+
+			return response
+			#return HttpResponse(f"{len(objects)} objects would be exported", content_type="text/plain")
 
 class JoinusFormAdmin(SnippetViewSet):
     model = JoinusFormPage

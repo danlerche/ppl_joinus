@@ -1,4 +1,0 @@
-On the registration model admin
-
-1) Set the user info as non editable
-2) List the user info in a table, or some other clear format
