@@ -66,21 +66,54 @@ class ExportCSV(BulkAction):
 	@hooks.register("before_bulk_action")
 	def hook_function(request, action_type, objects, action_class_instance, **kwargs):
 		if action_type == 'export_csv':
+			
+			user_info_list = []
+			fields = []
+			joinus_registration = JoinusRegistration.objects.all()
 			response = HttpResponse(content_type='text/csv')
 			response['Content-Disposition'] = 'attachment; filename="export_registration_info.csv"'
-			
 			writer = csv.writer(response)
-			fieldnames = [field.name for field in JoinusRegistration._meta.get_fields()]
+			#grab static fields includig the user_info field
+			static_fields = [field.name for field in JoinusRegistration._meta.get_fields()]
+			#remove the user_info label as that field label values is parsed as json seperately
+			static_fields.remove('user_info')
 
-			writer.writerow(fieldnames)
+			#the user_info labels are extracted from json in a single field
+			for jr in joinus_registration:
+				user_info_list.append(jr.user_info.form_data)
 
-			#for obj in JoinusRegistration.objects.all():
-			#	writer.writerow([str(getattr(obj, field)) for field in fieldnames])
+			form_builder_fields = list(user_info_list[0].keys())
+			field_comb = static_fields + form_builder_fields 
+
+			#clean up Field labels by replacing underscores with spaces and capitalize first letter of every word
+			for fn in field_comb:
+				fn_replace = fn.replace("_", " ").title()
+				fields.append(fn_replace) 
+
+			writer.writerow(fields)
+
+			ui_values = []
+			static_values = []
 			for obj in objects:
-				writer.writerow([str(getattr(obj, field)) for field in fieldnames])
+				ui_values.append(obj.user_info.form_data.values())
+				if obj.wait_list == True:
+					wait_list = 'Yes'
+				elif obj.wait_list == False:
+					wait_list = 'No'
+				static_values.append(list((obj.id, str(obj.event_name), obj.registration_date.strftime("%Y-%m-%d %H:%M"), wait_list)))
 
+			user_values = [list(val) for val in ui_values]
+
+			registration_values = []
+
+			for static, user in zip(static_values, user_values):
+				registration_values.append(static + user)
+
+			for rv in registration_values:
+				writer.writerow(rv)
+
+			#return HttpResponse(f"{registration_values}", content_type="text/plain")
 			return response
-			#return HttpResponse(f"{len(objects)} objects would be exported", content_type="text/plain")
 
 class JoinusFormAdmin(SnippetViewSet):
     model = JoinusFormPage

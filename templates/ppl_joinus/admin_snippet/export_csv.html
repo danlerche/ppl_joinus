@@ -16,7 +16,7 @@
         <ul>
             {% for item in items %}
             <li>
-              {{ item.item.event_name }} - user info: {{ item.item.user_info }} - registration date: {{ item.item.registration_date }} - wait list: {{ item.item.wait_list }}
+             id: {{ item.item.id }} - {{ item.item.event_name }} - user info: {{ item.item.user_info }} - registration date: {{ item.item.registration_date }} - wait list: {{ item.item.wait_list }}
             </li>
             {% endfor %}
         </ul>
