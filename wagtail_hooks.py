@@ -107,6 +107,7 @@ class ExportCSV(BulkAction):
 
 			user_values = [list(val) for val in user_info_values]
 
+			#clean up boolean field output
 			for user_info in user_values:
 				if ['No'] in user_info:
 					user_info[user_info.index(['No'])] = 'No'
