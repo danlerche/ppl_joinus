@@ -26,13 +26,13 @@ class JoinusEventAdmin(SnippetViewSet):
     FieldPanel('waitlist_email_msg'),
     ]
 
-class DeleteUserInfoView(DeleteView):
+#class DeleteUserInfoView(DeleteView):
 	#deletes the user info when a regration is also deleted
-	def get_success_message(self):
-		cancel_user = JoinusUserFormBuilder.objects.get(id=self.object.user_info.id)
-		cancel_user.delete()
-		msg = 'The following user info has been deleted:  ' + str(cancel_user)
-		return msg
+#	def get_success_message(self):
+#		cancel_user = JoinusUserFormBuilder.objects.get(id=self.object.user_info.id)
+#		cancel_user.delete()
+#		msg = 'The following user info has been deleted:  ' + str(cancel_user)
+#		return msg
 
 class FilterByEvent(WagtailFilterSet):
 	class Meta:
@@ -47,13 +47,23 @@ class JoinusRegistrationAdmin(SnippetViewSet):
 	list_display = ('name','email', 'event_name', 'registration_date' ,'wait_list')
 	index_template_name = 'ppl_joinus/joinusregistration/index.html'
 	filterset_class = FilterByEvent
-	delete_view_class = DeleteUserInfoView
+#	delete_view_class = DeleteUserInfoView
 	edit_template_name = 'ppl_joinus/admin_snippet/edit.html'
 
 	edit_handler = TabbedInterface([
         ObjectList([FieldPanel("registration_date", read_only=True), FieldPanel("user_info", read_only=True), FieldPanel("wait_list")], 
         	heading="Registrant"),
     ])
+
+#proposing using hooks to delete as delete view no longer seems to work
+	@hooks.register('after_delete_snippet')
+	def after_snippet_delete(request, objects):
+		for obj in objects: 
+			user_id = obj.user_info.id
+			user_info = JoinusUserFormBuilder.objects.get(id=user_id)
+			user_info.delete()
+		#return HttpResponse(f"{user_info} has been deleted", content_type="text/plain")
+		return request
 
 @hooks.register('register_bulk_action')
 class ExportCSV(BulkAction):
